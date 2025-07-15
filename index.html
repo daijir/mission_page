@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>伝道計画ダッシュボード</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Supportive Neutrals" - A calm and inviting palette using warm beige, soft browns, and a gentle green for success/accent states, creating a supportive and non-pressuring atmosphere. -->
+    <!-- Application Structure Plan: The SPA is a task-oriented dashboard. It starts with a clear "Objective" section, followed by the main "Scoreboard" for motivation. Below are actionable sections: a "Referral Form" for member input, and a dynamic "Referral Board" to display submissions. This structure guides the user from understanding the purpose, to seeing progress, to taking direct action, creating a clear and functional workflow. The "How to Help" section at the end provides gentle guidance for those not yet ready to submit a form. -->
+    <!-- Visualization & Content Choices:
+        - WIG Progress -> Goal: Motivate & Track -> Viz: An interactive "Sugoroku" (board game) path (HTML/CSS/JS). -> Interaction: Submitting a referral form automatically advances the progress, lighting up the next number. A manual input allows for corrections. -> Justification: The game-like path is highly engaging and visually represents forward momentum. Automating the progress from form submissions provides immediate positive feedback for user actions.
+        - Referral Form -> Goal: Capture user input easily -> Viz: A standard HTML form. -> Interaction: Users fill fields and submit. JS validates and processes data. -> Justification: A form is the most direct and universally understood method for data entry.
+        - Referral Board -> Goal: Display submissions clearly -> Viz: A grid of "cards" (HTML/CSS/JS). -> Interaction: Clicking a card opens a modal with details. -> Justification: Cards provide a scannable overview, while the modal pattern allows for displaying detailed information on demand without cluttering the UI.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FDFBF5;
+            color: #4F463B;
+        }
+        .accent-bg { background-color: #E3F0E3; }
+        .accent-text { color: #3A6B3A; }
+        .secondary-bg { background-color: #F3EFE7; }
+        .secondary-text { color: #786A59; }
+        .main-bg { background-color: #FFFFFF; }
+        .shadow-custom { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); }
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sugoroku-step {
+            transition: all 0.3s ease-in-out;
+            border: 2px solid transparent;
+        }
+        .sugoroku-step.active {
+            background-color: #FFD700;
+            color: #8C6D00;
+            border-color: #FBBF24;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+        .submit-button:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">福音の輪を広げよう！</h1>
+            <p class="mt-2 text-lg secondary-text">伝道実行計画ダッシュボード</p>
+        </header>
+
+        <main class="space-y-8 md:space-y-12">
+            
+            <section id="objective" class="secondary-bg p-6 rounded-2xl text-center">
+                <h2 class="text-xl font-bold text-gray-800">この計画の目的</h2>
+                <p class="mt-2 text-gray-700">この計画は、会員がプレッシャーを感じることなく、自然な形で伝道活動に参加できる文化を育むことを目的とします。伝道主任本人も会員と宣教師が一致することの難しさに震えながら、まぁ、とりあえずできることやってみようっていうメンタリティでこのホームページを作成するに至りました。</p>
+            </section>
+
+            <section id="wig-scoreboard" class="main-bg p-6 rounded-2xl shadow-custom text-center">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800">できたら本当にすごいぞ</h2>
+                <p class="mt-2 secondary-text text-base md:text-lg">目標: 年末までに<strong class="accent-text font-bold">10件</strong>の新しい名前を紹介する</p>
+                <div class="mt-8 mb-6">
+                    <div id="sugoroku-path" class="flex flex-wrap justify-center gap-3">
+                    </div>
+                </div>
+                <p class="font-semibold text-gray-800 text-lg">進捗: <span id="progress-text" class="accent-text text-2xl font-bold">0</span> / 10件</p>
+                <div class="mt-6">
+                    <label for="progress-input" class="block text-sm font-medium secondary-text mb-2">進捗を修正する（伝道主任用）:</label>
+                    <input type="number" id="progress-input" min="0" max="10" value="0" class="w-24 p-2 text-center border-2 rounded-lg focus:ring-2 focus:ring-green-300 focus:border-green-500">
+                </div>
+            </section>
+
+            <section id="action-opportunity" class="bg-blue-50 border-2 border-dashed border-blue-300 p-6 rounded-2xl shadow-custom">
+                <h3 class="text-lg md:text-xl font-bold text-blue-800 flex items-center">
+                    <span class="text-2xl mr-3">💌</span>
+                    活動のお知らせ
+                </h3>
+                <p id="opportunity-text" class="mt-2 text-base md:text-lg text-blue-700">
+                    7/19に伝道部のコンサート視聴会があります！お友達を誘って、一緒に楽しい時間を過ごす絶好の機会です！
+                </p>
+            </section>
+
+            <section id="referral-form-section" class="main-bg p-6 rounded-2xl shadow-custom">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">友人・知人を紹介する</h2>
+                <form id="referral-form" class="space-y-4">
+                    <div>
+                        <label for="member-name" class="block text-sm font-bold secondary-text">あなたのお名前 (例: ○○兄弟/姉妹) <span class="text-red-500">*</span></label>
+                        <input type="text" id="member-name" name="member-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" required>
+                    </div>
+                    <div>
+                        <label for="referral-name" class="block text-sm font-bold secondary-text">紹介する方のお名前 <span class="text-red-500">*</span></label>
+                        <input type="text" id="referral-name" name="referral-name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" required>
+                    </div>
+                    <div>
+                        <label for="referral-address" class="block text-sm font-bold secondary-text">住所 (任意)</label>
+                        <input type="text" id="referral-address" name="referral-address" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="missionary-action" class="block text-sm font-bold secondary-text">宣教師にお願いしたいこと <span class="text-red-500">*</span></label>
+                        <select id="missionary-action" name="missionary-action" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" required>
+                            <option value="">選択してください</option>
+                            <option value="メッセージ付きのモルモン書を届ける">メッセージ付きのモルモン書を届ける</option>
+                            <option value="訪問して自己紹介をする">訪問して自己紹介をする</option>
+                            <option value="次のイベントに招待する">次のイベントに招待する</option>
+                            <option value="その他（備考欄に記入）">その他（備考欄に記入）</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="remarks" class="block text-sm font-bold secondary-text">備考欄 (任意)</label>
+                        <textarea id="remarks" name="remarks" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+                    <button type="submit" id="submit-button" class="submit-button w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">紹介カードを作成し、すごろくを進める</button>
+                </form>
+            </section>
+
+            <section id="referral-board-section">
+                <h2 class="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6">紹介ボード</h2>
+                <div id="referral-board" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div id="no-referrals-message" class="col-span-full text-center secondary-text p-8 secondary-bg rounded-lg">
+                        <p>データベースに接続中...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="how-to-help" class="text-center secondary-bg p-6 rounded-2xl">
+                <h3 class="text-lg md:text-xl font-bold text-gray-800">私にできること</h3>
+                <div class="mt-4 grid md:grid-cols-3 gap-4 text-left">
+                    <div class="main-bg p-4 rounded-lg shadow-custom">
+                        <p class="font-bold text-gray-700">1. 愛してみる</p>
+                        <p class="text-sm secondary-text mt-1">教会について学んでほしいな～って思う人のためにお祈りをしてみたり、慈愛と徳をもって接したりしてみる。日常生活に良い影響があること間違いなし！</p>
+                    </div>
+                    <div class="main-bg p-4 rounded-lg shadow-custom">
+                        <p class="font-bold text-gray-700">2. 分かち合ってみる</p>
+                        <p class="text-sm secondary-text mt-1">「私、クリスチャンなんだよね」って自己開示してみる。興味を持ってもらえないことがほとんどですが、キリストの光を一瞬でも照らすだけで十分すごいです！</p>
+                    </div>
+                    <div class="main-bg p-4 rounded-lg shadow-custom">
+                        <p class="font-bold text-gray-700">3. 招いてみる</p>
+                        <p class="text-sm secondary-text mt-1">どんなスモールステップでもいいので招いてみる。一番ハードル高いよね。できたらほんとに奇跡！</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 text-sm text-gray-400">
+            <p>2025年度 ワード伝道計画</p>
+        </footer>
+
+        <div id="referral-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+            <div class="modal-content main-bg rounded-2xl shadow-xl w-full max-w-md p-6 transform scale-95 opacity-0">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">紹介の詳細</h3>
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-sm font-bold secondary-text">紹介された方:</p>
+                        <p id="modal-referral-name" class="text-lg text-gray-800"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold secondary-text">宣教師へのお願い:</p>
+                        <p id="modal-action" class="text-lg text-gray-800"></p>
+                    </div>
+                    <div id="modal-remarks-section" class="hidden">
+                        <p class="text-sm font-bold secondary-text">備考:</p>
+                        <p id="modal-remarks" class="text-lg text-gray-800 whitespace-pre-wrap"></p>
+                    </div>
+                </div>
+                <button id="modal-close-btn" class="mt-6 w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">閉じる</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, addDoc, setDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const app = {
+            config: {
+                totalSteps: 10,
+            },
+            state: {
+                currentProgress: 0,
+                db: null,
+                auth: null,
+                appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
+                planDocRef: null,
+                referralsColRef: null,
+            },
+            elements: {
+                progressInput: document.getElementById('progress-input'),
+                progressText: document.getElementById('progress-text'),
+                sugorokuPath: document.getElementById('sugoroku-path'),
+                referralForm: document.getElementById('referral-form'),
+                submitButton: document.getElementById('submit-button'),
+                referralBoard: document.getElementById('referral-board'),
+                noReferralsMessage: document.getElementById('no-referrals-message'),
+                modal: document.getElementById('referral-modal'),
+                modalReferralName: document.getElementById('modal-referral-name'),
+                modalAction: document.getElementById('modal-action'),
+                modalRemarksSection: document.getElementById('modal-remarks-section'),
+                modalRemarks: document.getElementById('modal-remarks'),
+                modalCloseBtn: document.getElementById('modal-close-btn'),
+            },
+            async init() {
+                this.renderSugorokuPath();
+                this.addEventListeners();
+                
+                try {
+                    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                    const firebaseApp = initializeApp(firebaseConfig);
+                    this.state.auth = getAuth(firebaseApp);
+                    this.state.db = getFirestore(firebaseApp);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(this.state.auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(this.state.auth);
+                    }
+                    
+                    this.setupFirestore();
+                } catch (error) {
+                    console.error("Firebase 初期化エラー:", error);
+                    this.elements.noReferralsMessage.textContent = "データベースへの接続に失敗しました。";
+                }
+            },
+            setupFirestore() {
+                this.state.planDocRef = doc(this.state.db, `artifacts/${this.state.appId}/public/data/missionaryPlan/main`);
+                this.state.referralsColRef = collection(this.state.planDocRef, 'referrals');
+
+                onSnapshot(this.state.planDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        this.elements.progressInput.value = data.progress || 0;
+                        this.updateView();
+                    } else {
+                        setDoc(this.state.planDocRef, { progress: 0 });
+                    }
+                });
+                
+                const referralsQuery = query(this.state.referralsColRef, orderBy("createdAt", "desc"));
+                onSnapshot(referralsQuery, (querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        this.elements.noReferralsMessage.innerHTML = '<p>まだ紹介はありません。最初のカードを追加しましょう！</p>';
+                        this.elements.noReferralsMessage.classList.remove('hidden');
+                    } else {
+                        this.elements.noReferralsMessage.classList.add('hidden');
+                    }
+                    this.elements.referralBoard.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        this.addReferralCard(doc.data());
+                    });
+                });
+            },
+            renderSugorokuPath() {
+                let pathHTML = '';
+                for (let i = 1; i <= this.config.totalSteps; i++) {
+                    pathHTML += `<div class="sugoroku-step w-12 h-12 flex items-center justify-center text-lg font-bold rounded-full bg-gray-200 text-gray-500" data-step="${i}">${i}</div>`;
+                }
+                this.elements.sugorokuPath.innerHTML = pathHTML;
+            },
+            updateView() {
+                this.state.currentProgress = parseInt(this.elements.progressInput.value, 10);
+                if (isNaN(this.state.currentProgress) || this.state.currentProgress < 0) this.state.currentProgress = 0;
+                if (this.state.currentProgress > this.config.totalSteps) this.state.currentProgress = this.config.totalSteps;
+                
+                this.elements.progressInput.value = this.state.currentProgress;
+                this.elements.progressText.textContent = this.state.currentProgress;
+
+                const steps = this.elements.sugorokuPath.querySelectorAll('.sugoroku-step');
+                steps.forEach(step => {
+                    const stepNumber = parseInt(step.dataset.step, 10);
+                    if (stepNumber <= this.state.currentProgress) {
+                        step.classList.add('active');
+                        step.classList.remove('bg-gray-200', 'text-gray-500');
+                    } else {
+                        step.classList.remove('active');
+                        step.classList.add('bg-gray-200', 'text-gray-500');
+                    }
+                });
+            },
+            addReferralCard(data) {
+                const card = document.createElement('button');
+                card.className = "referral-card main-bg p-4 rounded-lg shadow-custom text-center cursor-pointer hover:shadow-lg transition-shadow";
+                card.innerHTML = `
+                    <p class="font-bold text-gray-700">${data.memberName}より</p>
+                    <p class="text-sm secondary-text">紹介がありました</p>
+                `;
+                card.dataset.referralName = data.referralName;
+                card.dataset.action = data.action;
+                card.dataset.remarks = data.remarks;
+
+                this.elements.referralBoard.appendChild(card);
+            },
+            async handleFormSubmit(e) {
+                e.preventDefault();
+                this.elements.submitButton.disabled = true;
+                this.elements.submitButton.textContent = '送信中...';
+
+                const formData = new FormData(this.elements.referralForm);
+                const data = {
+                    memberName: formData.get('member-name'),
+                    referralName: formData.get('referral-name'),
+                    address: formData.get('referral-address'),
+                    action: formData.get('missionary-action'),
+                    remarks: formData.get('remarks'),
+                    createdAt: serverTimestamp(),
+                };
+
+                try {
+                    await addDoc(this.state.referralsColRef, data);
+                    
+                    const newProgress = this.state.currentProgress + 1;
+                    if (newProgress <= this.config.totalSteps) {
+                        await setDoc(this.state.planDocRef, { progress: newProgress }, { merge: true });
+                    }
+                    
+                    this.elements.referralForm.reset();
+                } catch (error) {
+                    console.error("紹介の保存エラー:", error);
+                    alert("エラーが発生しました。もう一度お試しください。");
+                } finally {
+                    this.elements.submitButton.disabled = false;
+                    this.elements.submitButton.textContent = '紹介カードを作成し、すごろくを進める';
+                }
+            },
+            showModal(data) {
+                this.elements.modalReferralName.textContent = data.referralName;
+                this.elements.modalAction.textContent = data.action;
+
+                if (data.remarks) {
+                    this.elements.modalRemarks.textContent = data.remarks;
+                    this.elements.modalRemarksSection.classList.remove('hidden');
+                } else {
+                    this.elements.modalRemarksSection.classList.add('hidden');
+                }
+
+                this.elements.modal.classList.remove('hidden');
+                setTimeout(() => {
+                    this.elements.modal.classList.remove('opacity-0');
+                    this.elements.modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            },
+            hideModal() {
+                this.elements.modal.classList.add('opacity-0');
+                this.elements.modal.querySelector('.modal-content').classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    this.elements.modal.classList.add('hidden');
+                }, 300);
+            },
+            addEventListeners() {
+                this.elements.progressInput.addEventListener('change', async () => {
+                    const newProgress = parseInt(this.elements.progressInput.value, 10);
+                    await setDoc(this.state.planDocRef, { progress: newProgress }, { merge: true });
+                });
+                
+                this.elements.referralForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+
+                this.elements.referralBoard.addEventListener('click', (e) => {
+                    const card = e.target.closest('.referral-card');
+                    if (card) {
+                        this.showModal(card.dataset);
+                    }
+                });
+
+                this.elements.modalCloseBtn.addEventListener('click', () => this.hideModal());
+                this.elements.modal.addEventListener('click', (e) => {
+                    if (e.target === this.elements.modal) {
+                        this.hideModal();
+                    }
+                });
+            }
+        };
+        app.init();
+    </script>
+</body>
+</html>
