@@ -214,7 +214,15 @@
                 this.addEventListeners();
                 
                 try {
-                    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyBL9TSTZC6Umt4HAfZzt48TkAarKmWvTO0",
+                        authDomain: "mission-page.firebaseapp.com",
+                        projectId: "mission-page",
+                        storageBucket: "mission-page.firebasestorage.app",
+                        messagingSenderId: "63558470127",
+                        appId: "1:63558470127:web:3b0d110bd0ee68ee050e1a",
+                        measurementId: "G-SDDPR47B7Z";
+                    };
                     const firebaseApp = initializeApp(firebaseConfig);
                     this.state.auth = getAuth(firebaseApp);
                     this.state.db = getFirestore(firebaseApp);
